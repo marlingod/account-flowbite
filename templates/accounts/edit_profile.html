@@ -1,0 +1,127 @@
+<!-- templates/accounts/edit_profile.html -->
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Edit Profile" %}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-6 flex items-center justify-between">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{% trans "Edit Profile" %}</h1>
+        <a href="{% url 'profile' %}" class="text-blue-600 hover:text-blue-700 dark:text-blue-500 dark:hover:text-blue-400">
+            &larr; {% trans "Back to Profile" %}
+        </a>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Profile Picture Section -->
+        <div class="md:col-span-1">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <h2 class="text-lg font-medium text-gray-900 dark:text-white mb-4">{% trans "Profile Picture" %}</h2>
+                
+                <div class="flex flex-col items-center">
+                    {% if user.profile_picture %}
+                    <img class="w-32 h-32 rounded-full mb-4 object-cover" src="{{ user.profile_picture.url }}" alt="{{ user.get_full_name }}">
+                    {% else %}
+                    <div class="w-32 h-32 rounded-full mb-4 bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+                        <span class="text-gray-600 dark:text-gray-300 text-2xl font-bold">
+                            {{ user.get_initials }}
+                        </span>
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post" enctype="multipart/form-data" class="w-full">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            {{ picture_form.profile_picture }}
+                            {% if picture_form.profile_picture.errors %}
+                            <p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ picture_form.profile_picture.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <button type="submit" name="update_picture" class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                            {% trans "Update Picture" %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Profile Information Section -->
+        <div class="md:col-span-2">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <h2 class="text-lg font-medium text-gray-900 dark:text-white mb-4">{% trans "Profile Information" %}</h2>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="grid gap-6 mb-6 md:grid-cols-2">
+                        <div>
+                            <label for="{{ form.first_name.id_for_label }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                                {% trans "First Name" %}
+                            </label>
+                            {{ form.first_name }}
+                            {% if form.first_name.errors %}
+                            <p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ form.first_name.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <label for="{{ form.last_name.id_for_label }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                                {% trans "Last Name" %}
+                            </label>
+                            {{ form.last_name }}
+                            {% if form.last_name.errors %}
+                            <p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ form.last_name.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label for="{{ form.email.id_for_label }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                            {% trans "Email Address" %}
+                        </label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                        <p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ form.email.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label for="{{ form.phone_number.id_for_label }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                            {% trans "Phone Number" %}
+                        </label>
+                        {{ form.phone_number }}
+                        {% if form.phone_number.errors %}
+                        <p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ form.phone_number.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label for="{{ form.date_of_birth.id_for_label }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                            {% trans "Date of Birth" %}
+                        </label>
+                        {{ form.date_of_birth }}
+                        {% if form.date_of_birth.errors %}
+                        <p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ form.date_of_birth.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label for="{{ form.bio.id_for_label }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                            {% trans "Biography" %}
+                        </label>
+                        {{ form.bio }}
+                        {% if form.bio.errors %}
+                        <p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ form.bio.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <button type="submit" name="update_info" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                        {% trans "Save Changes" %}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
