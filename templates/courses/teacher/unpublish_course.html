@@ -1,0 +1,87 @@
+{% extends "courses/base.html" %}
+{% load static %}
+
+{% block title %}Unpublish Course - {{ course.title }}{% endblock %}
+
+{% block courses_content %}
+<div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+    <div class="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Unpublish Course</h1>
+    </div>
+    
+    <div class="p-4 sm:p-6">
+        <div class="bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-yellow-800 dark:text-yellow-200">Unpublish Course</h3>
+                    <div class="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
+                        <p>You are about to unpublish the course "{{ course.title }}". Once unpublished, the course will be moved back to draft status and will no longer be visible in the course catalog.</p>
+                        <p class="mt-2 font-medium">Any students currently enrolled will still have access to the course content.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-6">
+            <h2 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Course Information</h2>
+            <dl class="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2">
+                <div class="sm:col-span-1">
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Title</dt>
+                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ course.title }}</dd>
+                </div>
+                <div class="sm:col-span-1">
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Category</dt>
+                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ course.category.name }}</dd>
+                </div>
+                <div class="sm:col-span-1">
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Published Date</dt>
+                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">
+                        {% if course.published_at %}
+                            {{ course.published_at|date:"F j, Y" }}
+                        {% else %}
+                            <span class="text-gray-400 dark:text-gray-500">Not available</span>
+                        {% endif %}
+                    </dd>
+                </div>
+                <div class="sm:col-span-1">
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Current Status</dt>
+                    <dd class="mt-1 text-sm">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+                            <span class="w-2 h-2 mr-1 bg-green-400 rounded-full"></span>
+                            Published
+                        </span>
+                    </dd>
+                </div>
+            </dl>
+        </div>
+        
+        <div class="bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+            <h3 class="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">What happens when you unpublish?</h3>
+            <ul class="list-disc pl-5 space-y-1 text-sm text-blue-700 dark:text-blue-300">
+                <li>The course will no longer appear in the public course catalog</li>
+                <li>New students will not be able to enroll in the course</li>
+                <li>Existing enrolled students will still have access to the course content</li>
+                <li>You can make changes to the course and publish it again later</li>
+            </ul>
+        </div>
+        
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            
+            <div class="pt-5 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
+                <a href="{% url 'teacher_course_detail' course.slug %}" class="bg-white py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                    Cancel
+                </a>
+                <button type="submit" class="text-white bg-yellow-600 hover:bg-yellow-700 focus:ring-4 focus:ring-yellow-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-yellow-500 dark:hover:bg-yellow-600 focus:outline-none dark:focus:ring-yellow-700">
+                    Unpublish Course
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

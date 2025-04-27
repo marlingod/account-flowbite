@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ profile_user.get_full_name|default:profile_user.username }} - LMS Platform{% endblock %}
+
+{% block content %}
+<div class="pb-6">
+    <div class="flex items-center">
+        <a href="{% url 'user_list' %}" class="text-blue-600 dark:text-blue-500 hover:underline mr-2">
+            <i class="fas fa-arrow-left"></i> {% trans "Back to Users" %}
+        </a>
+    </div>
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mt-4">
+        {% trans "User Profile" %}: {{ profile_user.get_full_name|default:profile_user.username }}
+    </h1>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- Profile Card -->
+    <div class="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
+        <div class="flex flex-col items-center pb-6">
+            {% if profile_user.profile_picture %}
+            <img class="w-24 h-24 mb-3 rounded-full shadow-lg object-cover" src="{{ profile_user.profile_picture.url }}" alt="{{ profile_user.get_full_name }}">
+            {% else %}
+            <div class="w-24 h-24 mb-3 rounded-full shadow-lg bg-blue-500 flex items-center justify-center text-white text-2xl font-bold">
+                {{ profile_user.get_initials }}
+            </div>
+            {% endif %}
+            <h5 class="mb-1 text-xl font-medium text-gray-900 dark:text-white">{{ profile_user.get_full_name }}</h5>
+            <span class="text-sm text-gray-500 dark:text-gray-400">{{ profile_user.email }}</span>
+            <span class="px-2 mt-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+            {% if profile_user.user_type == 'admin' %}bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300
+            {% elif profile_user.user_type == 'teacher' %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300
+            {% else %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300{% endif %}">
+                {{ profile_user.get_user_type_display }}
+            </span>
+            
+            <span class="px-2 mt-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+            {% if profile_user.is_active %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300
+            {% else %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300{% endif %}">
+                {% if profile_user.is_active %}{% trans "Active" %}{% else %}{% trans "Inactive" %}{% endif %}
+            </span>
+        </div>
+        
+        <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
+            {% if profile_user.id != request.user.id %}
+            <div class="flex flex-wrap space-x-2 justify-center">
+                <a href="{% url 'change_user_type' user_id=profile_user.id %}" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
+                    <i class="fas fa-user-tag mr-1"></i> {% trans "Change Role" %}
+                </a>
+                
+                {% if profile_user.is_active %}
+                <a href="{% url 'deactivate_user' user_id=profile_user.id %}" class="text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 mb-2 dark:bg-red-600 dark:hover:bg-red-700 focus:outline-none dark:focus:ring-red-800">
+                    <i class="fas fa-user-slash mr-1"></i> {% trans "Deactivate" %}
+                </a>
+                {% else %}
+                <a href="{% url 'activate_user' user_id=profile_user.id %}" class="text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 mb-2 dark:bg-green-600 dark:hover:bg-green-700 focus:outline-none dark:focus:ring-green-800">
+                    <i class="fas fa-user-check mr-1"></i> {% trans "Activate" %}
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- User Details -->
+    <div class="bg-white rounded-lg shadow p-6 dark:bg-gray-800 md:col-span-2">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">{% trans "User Information" %}</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{% trans "Username" %}</p>
+                <p class="text-lg font-semibold text-gray-900 dark:text-white">{{ profile_user.username }}</p>
+            </div>
+            
+            <div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{% trans "Email" %}</p>
+                <p class="text-lg font-semibold text-gray-900 dark:text-white">{{ profile_user.email }}</p>
+            </div>
+            
+            <div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{% trans "First Name" %}</p>
+                <p class="text-lg font-semibold text-gray-900 dark:text-white">{{ profile_user.first_name|default:"—" }}</p>
+            </div>
+            
+            <div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{% trans "Last Name" %}</p>
+                <p class="text-lg font-semibold text-gray-900 dark:text-white">{{ profile_user.last_name|default:"—" }}</p>
+            </div>
+            
+            <div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{% trans "Date Joined" %}</p>
+                <p class="text-lg font-semibold text-gray-900 dark:text-white">{{ profile_user.date_joined|date:"F j, Y" }}</p>
+            </div>
+            
+            <div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{% trans "Last Login" %}</p>
+                <p class="text-lg font-semibold text-gray-900 dark:text-white">
+                    {% if profile_user.last_login %}
+                    {{ profile_user.last_login|date:"F j, Y H:i" }}
+                    {% else %}
+                    {% trans "Never" %}
+                    {% endif %}
+                </p>
+            </div>
+            
+            {% if profile_user.phone_number %}
+            <div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{% trans "Phone Number" %}</p>
+                <p class="text-lg font-semibold text-gray-900 dark:text-white">{{ profile_user.phone_number }}</p>
+            </div>
+            {% endif %}
+            
+            {% if profile_user.date_of_birth %}
+            <div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{% trans "Date of Birth" %}</p>
+                <p class="text-lg font-semibold text-gray-900 dark:text-white">{{ profile_user.date_of_birth|date:"F j, Y" }}</p>
+            </div>
+            {% endif %}
+        </div>
+        
+        {% if profile_user.bio %}
+        <div class="mt-6">
+            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{% trans "Bio" %}</p>
+            <div class="mt-2 p-4 bg-gray-50 rounded-lg dark:bg-gray-700">
+                <p class="text-gray-900 dark:text-white">{{ profile_user.bio|linebreaks }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

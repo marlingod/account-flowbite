@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load quiz_tags %}
+
+{% block title %}{% trans "Quizzes" %} - {{ course.title }}{% endblock %}
+
+{% block content %}
+<div class="pb-6">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">{% trans "Quizzes for" %} {{ course.title }}</h1>
+    <p class="text-gray-600 dark:text-gray-400">{% trans "Complete the quizzes to test your knowledge and progress in the course." %}</p>
+</div>
+
+{% if quizzes %}
+    <div class="grid grid-cols-1 gap-6">
+        {% for quiz in quizzes %}
+            <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">{{ quiz.title }}</h2>
+                        <p class="text-gray-600 dark:text-gray-400 mt-1">
+                            {% if quiz.quiz_type == 'lesson_quiz' %}
+                                {% trans "Lesson Quiz" %}: {{ quiz.lesson.title }}
+                            {% elif quiz.quiz_type == 'module_quiz' %}
+                                {% trans "Module Quiz" %}: {{ quiz.module.title }}
+                            {% elif quiz.quiz_type == 'final_exam' %}
+                                {% trans "Final Exam" %}
+                            {% else %}
+                                {% trans "Practice Quiz" %}
+                            {% endif %}
+                        </p>
+                    </div>
+                    
+                    <div class="mt-4 md:mt-0">
+                        {% if quiz.id in attempt_dict %}
+                            {% with attempts=attempt_dict|get_item:quiz.id %}
+                                {% with completed_attempts=attempts|filter_by:"status,completed" %}
+                                    {% if completed_attempts %}
+                                        {% with last_attempt=completed_attempts|first %}
+                                            <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg text-center">
+                                                <p class="text-sm text-gray-600 dark:text-gray-400">{% trans "Last Score" %}</p>
+                                                <p class="text-lg font-semibold {% if last_attempt.passed %}text-green-600 dark:text-green-400{% else %}text-red-600 dark:text-red-400{% endif %}">
+                                                    {{ last_attempt.percentage|floatformat:1 }}%
+                                                </p>
+                                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ last_attempt.completed_at|date:"M d, Y" }}</p>
+                                            </div>
+                                        {% endwith %}
+                                    {% endif %}
+                                {% endwith %}
+                                
+                                {% if quiz.max_attempts > 0 %}
+                                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                                        {{ attempts|length }} / {{ quiz.max_attempts }} {% trans "attempts used" %}
+                                    </p>
+                                {% endif %}
+                            {% endwith %}
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <p class="text-gray-700 dark:text-gray-300">{{ quiz.description }}</p>
+                </div>
+                
+                <dl class="mt-4 grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 md:grid-cols-3">
+                    <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">{% trans "Questions" %}</dt>
+                        <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ quiz.question_count }}</dd>
+                    </div>
+                    
+                    <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">{% trans "Time Limit" %}</dt>
+                        <dd class="mt-1 text-sm text-gray-900 dark:text-white">
+                            {% if quiz.time_limit %}
+                                {{ quiz.time_limit }} {% trans "minutes" %}
+                            {% else %}
+                                {% trans "No time limit" %}
+                            {% endif %}
+                        </dd>
+                    </div>
+                    
+                    <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">{% trans "Passing Score" %}</dt>
+                        <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ quiz.passing_score }}%</dd>
+                    </div>
+                </dl>
+                
+                <div class="mt-6">
+                    {% if quiz.id in attempt_dict %}
+                        {% with attempts=attempt_dict|get_item:quiz.id %}
+                            {% with in_progress=attempts|filter_by:"status,in_progress"|first %}
+                                {% if in_progress %}
+                                    <a href="{% url 'continue_quiz' course_slug=course.slug attempt_id=in_progress.id %}" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                        {% trans "Continue Quiz" %}
+                                    </a>
+                                {% elif quiz.max_attempts > 0 and attempts|filter_by:"status,completed"|length >= quiz.max_attempts %}
+                                    <button disabled class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-gray-100 cursor-not-allowed">
+                                        {% trans "Maximum attempts reached" %}
+                                    </button>
+                                {% else %}
+                                    <a href="{% url 'start_quiz' course_slug=course.slug quiz_id=quiz.id %}" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                        {% trans "Start Quiz" %}
+                                    </a>
+                                {% endif %}
+                            {% endwith %}
+                            
+                            {% with completed=attempts|filter_by:"status,completed" %}
+                                {% if completed %}
+                                    <a href="{% url 'quiz_results' course_slug=course.slug attempt_id=completed.0.id %}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ml-3">
+                                        {% trans "View Last Results" %}
+                                    </a>
+                                {% endif %}
+                            {% endwith %}
+                        {% endwith %}
+                    {% else %}
+                        <a href="{% url 'start_quiz' course_slug=course.slug quiz_id=quiz.id %}" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            {% trans "Start Quiz" %}
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 text-center">
+        <p class="text-gray-700 dark:text-gray-300">{% trans "No quizzes available for this course yet." %}</p>
+    </div>
+{% endif %}
+
+<div class="mt-6">
+    <a href="{% url 'student_course_detail' slug=course.slug %}" class="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
+        &larr; {% trans "Back to Course" %}
+    </a>
+</div>
+{% endblock %}

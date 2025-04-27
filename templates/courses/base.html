@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Courses{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex flex-col md:flex-row gap-8">
+        <!-- Sidebar navigation -->
+        <div class="w-full md:w-1/4 lg:w-1/5">
+            <nav class="bg-white dark:bg-gray-800 shadow rounded-lg p-4">
+                <h2 class="text-lg font-semibold mb-4 text-gray-800 dark:text-white">Courses</h2>
+                <ul class="space-y-2">
+                    <li><a href="{% url 'course_list' %}" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">Browse Courses</a></li>
+                    <li><a href="{% url 'category_list' %}" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">Categories</a></li>
+                    
+                    {% if user.is_authenticated %}
+                        {% if is_teacher or is_admin %}
+                        <li class="pt-4 border-t border-gray-200 dark:border-gray-700">
+                            <h3 class="text-md font-medium mb-2 text-gray-700 dark:text-gray-300">Teacher</h3>
+                            <ul class="pl-2 space-y-1">
+                                <li><a href="{% url 'teacher_course_list' %}" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">My Courses</a></li>
+                                <li><a href="{% url 'create_course' %}" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">Create Course</a></li>
+                            </ul>
+                        </li>
+                        {% endif %}
+                        
+                        {% if is_admin %}
+                        <li class="pt-4 border-t border-gray-200 dark:border-gray-700">
+                            <h3 class="text-md font-medium mb-2 text-gray-700 dark:text-gray-300">Admin</h3>
+                            <ul class="pl-2 space-y-1">
+                                <li><a href="{% url 'admin_category_list' %}" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">Manage Categories</a></li>
+                            </ul>
+                        </li>
+                        {% endif %}
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        
+        <!-- Main content -->
+        <div class="w-full md:w-3/4 lg:w-4/5">
+            {% block courses_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}

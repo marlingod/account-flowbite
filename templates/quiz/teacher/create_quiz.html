@@ -1,0 +1,502 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Create Quiz" %} - LMS Platform{% endblock %}
+
+{% block extra_css %}
+<style>
+    .question-container {
+        transition: all 0.3s ease;
+    }
+    .dragging {
+        opacity: 0.5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{% trans "Create Quiz" %}</h1>
+    <p class="text-gray-600 dark:text-gray-400">
+        {% if course %}
+            {% trans "For course:" %} <a href="{% url 'teacher_course_detail' slug=course.slug %}" class="text-blue-600 dark:text-blue-500 hover:underline">{{ course.title }}</a>
+        {% else %}
+            {% trans "New Quiz" %}
+        {% endif %}
+    </p>
+</div>
+
+<div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6">
+    <form method="post" id="quiz-form">
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+        <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
+            {% for error in form.non_field_errors %}
+            <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <!-- Quiz Basic Information -->
+        <div class="mb-6">
+            <label for="id_title" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">{% trans "Quiz Title" %} <span class="text-red-500">*</span></label>
+            <input type="text" id="id_title" name="title" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="{% trans "Enter quiz title" %}" required>
+            {% if form.title.errors %}
+            <p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ form.title.errors.0 }}</p>
+            {% endif %}
+        </div>
+        
+        <div class="grid gap-6 mb-6 md:grid-cols-2">
+            <div>
+                <label for="id_module" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">{% trans "Module" %} <span class="text-red-500">*</span></label>
+                <select id="id_module" name="module" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required>
+                    <option value="" selected>{% trans "Select module" %}</option>
+                    {% if modules %}
+                        {% for module in modules %}
+                            <option value="{{ module.id }}">{{ module.title }}</option>
+                        {% endfor %}
+                    {% elif course.modules.all %}
+                        {% for module in course.modules.all %}
+                            <option value="{{ module.id }}">{{ module.title }}</option>
+                        {% endfor %}
+                    {% else %}
+                        <option value="" disabled>{% trans "No modules available for this course" %}</option>
+                    {% endif %}
+                </select>
+                {% if form.module.errors %}
+                <p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ form.module.errors.0 }}</p>
+                {% endif %}
+            </div>
+            
+            <div>
+                <label for="id_order" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">{% trans "Order" %}</label>
+                <input type="number" id="id_order" name="order" min="0" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="0">
+                {% if form.order.errors %}
+                <p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ form.order.errors.0 }}</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="grid gap-6 mb-6 md:grid-cols-2">
+        <div class="mb-6">
+            <label for="id_lesson" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">{% trans "Lesson" %} <span class="text-red-500">*</span></label>
+            <select id="id_lesson" name="lesson" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required>
+                <option value="" selected>{% trans "Select lesson" %}</option>
+            </select>
+            {% if form.lesson.errors %}
+            <p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ form.lesson.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+    </div>
+        <div class="grid gap-6 mb-6 md:grid-cols-2">
+            <div>
+                <label for="id_time_limit" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">{% trans "Time Limit (minutes)" %}</label>
+                <input type="number" id="id_time_limit" name="time_limit" min="0" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="30">
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{% trans "Leave blank for no time limit" %}</p>
+                {% if form.time_limit.errors %}
+                <p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ form.time_limit.errors.0 }}</p>
+                {% endif %}
+            </div>
+            
+            <div>
+                <label for="id_pass_score" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">{% trans "Passing Score (%)" %} <span class="text-red-500">*</span></label>
+                <input type="number" id="id_pass_score" name="pass_score" min="0" max="100" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value="70" required>
+                {% if form.pass_score.errors %}
+                <p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ form.pass_score.errors.0 }}</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="mb-6">
+            <label for="id_description" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">{% trans "Description" %}</label>
+            <textarea id="id_description" name="description" rows="4" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="{% trans "Quiz description and instructions" %}"></textarea>
+            {% if form.description.errors %}
+            <p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ form.description.errors.0 }}</p>
+            {% endif %}
+        </div>
+        
+        <div class="flex items-center mb-6">
+            <input id="id_is_published" name="is_published" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+            <label for="id_is_published" class="ml-2 text-sm font-medium text-gray-900 dark:text-white">{% trans "Publish immediately" %}</label>
+        </div>
+        
+        <div class="flex items-center mb-6">
+            <input id="id_allow_review" name="allow_review" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" checked>
+            <label for="id_allow_review" class="ml-2 text-sm font-medium text-gray-900 dark:text-white">{% trans "Allow students to review their answers after completion" %}</label>
+        </div>
+        
+        <div class="flex items-center mb-6">
+            <input id="id_randomize_questions" name="randomize_questions" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+            <label for="id_randomize_questions" class="ml-2 text-sm font-medium text-gray-900 dark:text-white">{% trans "Randomize question order" %}</label>
+        </div>
+        
+        <!-- Questions Section -->
+        <h2 class="text-xl font-bold mt-8 mb-4 text-gray-900 dark:text-white">{% trans "Questions" %}</h2>
+        
+        <div id="questions-container">
+            <!-- Question template will be cloned and inserted here -->
+        </div>
+        
+        <button type="button" id="add-question-btn" class="mt-4 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center mr-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            {% trans "Add Question" %}
+        </button>
+        
+        <div class="mt-8 flex justify-end">
+            <a href="{% url 'teacher_course_detail' slug=course.slug %}" class="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700">
+                {% trans "Cancel" %}
+            </a>
+            <button type="submit" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                {% trans "Create Quiz" %}
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Question Template (Hidden) -->
+<template id="question-template">
+    <div class="question-container bg-gray-50 dark:bg-gray-700 p-4 rounded-lg mb-4 border border-gray-200 dark:border-gray-600" data-question-id="__QUESTION_ID__">
+        <div class="flex justify-between items-center mb-2">
+            <div class="flex items-center">
+                <span class="mr-2 question-number font-medium">Question 1</span>
+                <button type="button" class="drag-handle text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 cursor-move">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path>
+                    </svg>
+                </button>
+            </div>
+            <div>
+                <button type="button" class="delete-question text-red-500 hover:text-red-700">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        
+        <div class="mb-4">
+            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">{% trans "Question Type" %}</label>
+            <select name="questions[__QUESTION_ID__][type]" class="question-type bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                <option value="multiple_choice">{% trans "Multiple Choice" %}</option>
+                <option value="true_false">{% trans "True/False" %}</option>
+                <option value="short_answer">{% trans "Short Answer" %}</option>
+                <option value="essay">{% trans "Essay" %}</option>
+            </select>
+        </div>
+        
+        <div class="mb-4">
+            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">{% trans "Question Text" %}</label>
+            <textarea name="questions[__QUESTION_ID__][text]" rows="2" class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required></textarea>
+        </div>
+        
+        <div class="mb-4">
+            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">{% trans "Points" %}</label>
+            <input type="number" name="questions[__QUESTION_ID__][points]" min="1" value="1" class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-40 p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+        </div>
+        
+        <!-- Answer Options Container -->
+        <div class="answer-options-container">
+            <!-- For Multiple Choice -->
+            <div class="multiple-choice-container">
+                <div class="mb-2 flex justify-between items-center">
+                    <label class="block text-sm font-medium text-gray-900 dark:text-white">{% trans "Answer Options" %}</label>
+                    <button type="button" class="add-option text-blue-700 hover:text-blue-800 dark:text-blue-500 dark:hover:text-blue-400 text-sm font-medium">
+                        <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        {% trans "Add Option" %}
+                    </button>
+                </div>
+                
+                <div class="option-list">
+                    <!-- Option Template -->
+                    <div class="option-item mb-2 flex items-center">
+                        <input type="radio" name="questions[__QUESTION_ID__][correct]" value="0" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                        <input type="text" name="questions[__QUESTION_ID__][options][]" class="ml-2 bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 dark:bg-gray-600 dark:border-gray-500 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="{% trans "Enter answer option" %}" required>
+                        <button type="button" class="delete-option ml-2 text-red-500 hover:text-red-700">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div class="option-item mb-2 flex items-center">
+                        <input type="radio" name="questions[__QUESTION_ID__][correct]" value="1" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                        <input type="text" name="questions[__QUESTION_ID__][options][]" class="ml-2 bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 dark:bg-gray-600 dark:border-gray-500 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="{% trans "Enter answer option" %}" required>
+                        <button type="button" class="delete-option ml-2 text-red-500 hover:text-red-700">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- For True/False -->
+            <div class="true-false-container hidden">
+                <div class="mb-4">
+                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">{% trans "Correct Answer" %}</label>
+                    <div class="flex items-center">
+                        <div class="flex items-center mr-4">
+                            <input id="true-option-__QUESTION_ID__" type="radio" name="questions[__QUESTION_ID__][correct_tf]" value="true" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" checked>
+                            <label for="true-option-__QUESTION_ID__" class="ml-2 text-sm font-medium text-gray-900 dark:text-white">{% trans "True" %}</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input id="false-option-__QUESTION_ID__" type="radio" name="questions[__QUESTION_ID__][correct_tf]" value="false" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                            <label for="false-option-__QUESTION_ID__" class="ml-2 text-sm font-medium text-gray-900 dark:text-white">{% trans "False" %}</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- For Short Answer -->
+            <div class="short-answer-container hidden">
+                <div class="mb-4">
+                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">{% trans "Correct Answer(s)" %}</label>
+                    <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">{% trans "Enter one or more accepted answers, one per line. Case-insensitive." %}</p>
+                    <textarea name="questions[__QUESTION_ID__][correct_answers]" rows="3" class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="{% trans "Example: Paris&#10;paris&#10;France capital" %}"></textarea>
+                </div>
+            </div>
+            
+            <!-- For Essay -->
+            <div class="essay-container hidden">
+                <div class="mb-4">
+                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">{% trans "Model Answer (Optional)" %}</label>
+                    <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">{% trans "This will be shown to students after review, but they'll need manual grading." %}</p>
+                    <textarea name="questions[__QUESTION_ID__][model_answer]" rows="3" class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"></textarea>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mb-4">
+            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">{% trans "Explanation (Optional)" %}</label>
+            <textarea name="questions[__QUESTION_ID__][explanation]" rows="2" class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="{% trans "Explanation to show after answering" %}"></textarea>
+        </div>
+    </div>
+</template>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+<script>
+    // Add this to your existing JavaScript section
+document.addEventListener('DOMContentLoaded', function() {
+    const moduleSelect = document.getElementById('id_module');
+    const lessonSelect = document.getElementById('id_lesson');
+    
+    // Function to load lessons based on selected module
+    function loadLessons() {
+        const moduleId = moduleSelect.value;
+        
+        // Clear current options
+        lessonSelect.innerHTML = '<option value="" selected>{% trans "Select lesson" %}</option>';
+        
+        if (!moduleId) {
+            return;
+        }
+        
+        // Fetch lessons for the selected module
+        fetch(`/api/modules/${moduleId}/lessons/`)
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(lesson => {
+                    const option = document.createElement('option');
+                    option.value = lesson.id;
+                    option.textContent = lesson.title;
+                    lessonSelect.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error loading lessons:', error));
+    }
+    
+    // Load lessons when module changes
+    moduleSelect.addEventListener('change', loadLessons);
+});
+    document.addEventListener('DOMContentLoaded', function() {
+        let questionCounter = 0;
+        const questionsContainer = document.getElementById('questions-container');
+        const questionTemplate = document.getElementById('question-template');
+        const addQuestionBtn = document.getElementById('add-question-btn');
+        
+        // Make questions container sortable
+        new Sortable(questionsContainer, {
+            handle: '.drag-handle',
+            animation: 150,
+            ghostClass: 'bg-gray-100 dark:bg-gray-600',
+            onStart: function(evt) {
+                evt.item.classList.add('dragging');
+            },
+            onEnd: function(evt) {
+                evt.item.classList.remove('dragging');
+                renumberQuestions();
+            }
+        });
+        
+        // Add a new question
+        addQuestionBtn.addEventListener('click', function() {
+            addQuestion();
+        });
+        
+        // Add first question automatically
+        addQuestion();
+        
+        // Handle question type changes
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('question-type')) {
+                toggleAnswerOptions(e.target);
+            }
+        });
+        
+        // Handle delete question button
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.delete-question')) {
+                const questionContainer = e.target.closest('.question-container');
+                if (questionsContainer.childElementCount > 1) {
+                    questionContainer.remove();
+                    renumberQuestions();
+                } else {
+                    alert('{% trans "You must have at least one question." %}');
+                }
+            }
+        });
+        
+        // Handle add option button
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.add-option')) {
+                const questionContainer = e.target.closest('.question-container');
+                const optionList = questionContainer.querySelector('.option-list');
+                const questionId = questionContainer.dataset.questionId;
+                
+                const newOption = document.createElement('div');
+                newOption.className = 'option-item mb-2 flex items-center';
+                const optionIndex = optionList.childElementCount;
+                
+                newOption.innerHTML = `
+                    <input type="radio" name="questions[${questionId}][correct]" value="${optionIndex}" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                    <input type="text" name="questions[${questionId}][options][]" class="ml-2 bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 dark:bg-gray-600 dark:border-gray-500 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="{% trans "Enter answer option" %}" required>
+                    <button type="button" class="delete-option ml-2 text-red-500 hover:text-red-700">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                `;
+                
+                optionList.appendChild(newOption);
+            }
+        });
+        
+        // Handle delete option button
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.delete-option')) {
+                const optionItem = e.target.closest('.option-item');
+                const optionList = optionItem.parentElement;
+                
+                if (optionList.childElementCount > 2) {
+                    optionItem.remove();
+                    
+                    // Update the value attributes of the radio buttons
+                    const options = optionList.querySelectorAll('.option-item');
+                    options.forEach((option, index) => {
+                        option.querySelector('input[type="radio"]').value = index;
+                    });
+                } else {
+                    alert('{% trans "You must have at least two options." %}');
+                }
+            }
+        });
+        
+        // Form submission validation
+        document.getElementById('quiz-form').addEventListener('submit', function(e) {
+            const questions = document.querySelectorAll('.question-container');
+            
+            if (questions.length === 0) {
+                e.preventDefault();
+                alert('{% trans "You must add at least one question." %}');
+                return false;
+            }
+            
+            let valid = true;
+            
+            questions.forEach(question => {
+                const questionType = question.querySelector('.question-type').value;
+                
+                if (questionType === 'multiple_choice') {
+                    // Check if at least one option is selected as correct
+                    const correctOption = question.querySelector('input[type="radio"][name^="questions"][name$="[correct]"]:checked');
+                    if (!correctOption) {
+                        valid = false;
+                        alert('{% trans "Please select a correct answer for each multiple choice question." %}');
+                    }
+                }
+            });
+            
+            if (!valid) {
+                e.preventDefault();
+                return false;
+            }
+        });
+        
+        // Function to add a new question
+        function addQuestion() {
+            const newQuestionId = questionCounter++;
+            const newQuestion = questionTemplate.content.cloneNode(true);
+            
+            // Replace placeholder IDs
+            const html = newQuestion.firstElementChild.outerHTML.replace(/__QUESTION_ID__/g, newQuestionId);
+            const questionElem = document.createRange().createContextualFragment(html);
+            
+            questionsContainer.appendChild(questionElem);
+            renumberQuestions();
+            
+            // Show the appropriate answer type fields
+            const questionType = document.querySelector(`.question-container[data-question-id="${newQuestionId}"] .question-type`);
+            toggleAnswerOptions(questionType);
+        }
+        
+        // Function to renumber questions
+        function renumberQuestions() {
+            const questions = document.querySelectorAll('.question-container');
+            questions.forEach((question, index) => {
+                question.querySelector('.question-number').textContent = `Question ${index + 1}`;
+            });
+        }
+        
+        // Function to toggle answer options based on question type
+        function toggleAnswerOptions(select) {
+            const questionContainer = select.closest('.question-container');
+            const multipleChoiceContainer = questionContainer.querySelector('.multiple-choice-container');
+            const trueFalseContainer = questionContainer.querySelector('.true-false-container');
+            const shortAnswerContainer = questionContainer.querySelector('.short-answer-container');
+            const essayContainer = questionContainer.querySelector('.essay-container');
+            
+            // Hide all containers first
+            multipleChoiceContainer.classList.add('hidden');
+            trueFalseContainer.classList.add('hidden');
+            shortAnswerContainer.classList.add('hidden');
+            essayContainer.classList.add('hidden');
+            
+            // Show the relevant container
+            switch (select.value) {
+                case 'multiple_choice':
+                    multipleChoiceContainer.classList.remove('hidden');
+                    break;
+                case 'true_false':
+                    trueFalseContainer.classList.remove('hidden');
+                    break;
+                case 'short_answer':
+                    shortAnswerContainer.classList.remove('hidden');
+                    break;
+                case 'essay':
+                    essayContainer.classList.remove('hidden');
+                    break;
+            }
+        }
+    });
+</script>
+{% endblock %}

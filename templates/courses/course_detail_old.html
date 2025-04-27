@@ -1,0 +1,265 @@
+{% extends "courses/base.html" %}
+{% load static %}
+
+{% block title %}{{ course.title }}{% endblock %}
+
+{% block courses_content %}
+<div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+    <!-- Course Header -->
+    <div class="relative">
+        {% if course.thumbnail %}
+            <div class="h-56 bg-cover bg-center" style="background-image: url('{{ course.thumbnail.url }}')">
+                <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+            </div>
+        {% else %}
+            <div class="h-56 bg-gradient-to-r from-blue-500 to-indigo-600">
+                <div class="absolute inset-0 bg-opacity-80"></div>
+            </div>
+        {% endif %}
+        
+        <div class="absolute bottom-0 left-0 right-0 p-6 text-white">
+            <div class="flex items-center mb-2 space-x-2">
+                <span class="bg-blue-700 text-xs uppercase px-2 py-1 rounded-full">
+                    {{ course.category.name }}
+                </span>
+                <span class="bg-gray-700 bg-opacity-70 text-xs uppercase px-2 py-1 rounded-full">
+                    {{ course.get_difficulty_display }}
+                </span>
+                {% if course.duration %}
+                    <span class="bg-gray-700 bg-opacity-70 text-xs px-2 py-1 rounded-full">
+                        <i class="far fa-clock mr-1"></i> {{ course.duration }} hours
+                    </span>
+                {% endif %}
+            </div>
+            <h1 class="text-3xl font-bold">{{ course.title }}</h1>
+            <p class="text-gray-200 mt-2">{{ course.instructor.get_full_name }}</p>
+        </div>
+    </div>
+    
+    <!-- Course Actions -->
+    <div class="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4">
+        <div class="flex flex-wrap justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center">
+                    <span class="text-gray-700 dark:text-gray-300">
+                        <i class="fas fa-book mr-1"></i> {{ course.total_modules }} modules
+                    </span>
+                    <span class="mx-2 text-gray-400">•</span>
+                    <span class="text-gray-700 dark:text-gray-300">
+                        <i class="fas fa-video mr-1"></i> {{ course.total_lessons }} lessons
+                    </span>
+                </div>
+            </div>
+            
+            <div>
+                {% if is_enrolled %}
+                    <a href="#" class="text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-green-500 dark:hover:bg-green-600 focus:outline-none dark:focus:ring-green-700">
+                        Continue Learning
+                    </a>
+                {% else %}
+                    <button type="button" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
+                        Enroll in Course
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Course Content -->
+    <div class="p-6">
+        <div class="flex flex-col md:flex-row gap-8">
+            <!-- Left column: Course details -->
+            <div class="w-full md:w-2/3">
+                <div class="mb-8">
+                    <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">About This Course</h2>
+                    <div class="prose prose-blue max-w-none dark:prose-invert">
+                        {{ course.description|linebreaks }}
+                    </div>
+                </div>
+                
+                {% if course.learning_objectives %}
+                <div class="mb-8">
+                    <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">What You'll Learn</h2>
+                    <div class="prose prose-blue max-w-none dark:prose-invert">
+                        {{ course.learning_objectives|linebreaks }}
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if course.prerequisites %}
+                <div class="mb-8">
+                    <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">Prerequisites</h2>
+                    <div class="prose prose-blue max-w-none dark:prose-invert">
+                        {{ course.prerequisites|linebreaks }}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="mb-8">
+                    <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">Course Content</h2>
+                    
+                    {% if modules %}
+                        <div class="space-y-4">
+                            {% for module in modules %}
+                                <div class="border border-gray-200 dark:border-gray-700 rounded-lg">
+                                    <div class="p-4 bg-gray-50 dark:bg-gray-900 rounded-t-lg cursor-pointer" id="module-header-{{ module.id }}" onclick="toggleModule({{ module.id }})">
+                                        <div class="flex justify-between items-center">
+                                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+                                                {{ module.title }}
+                                            </h3>
+                                            <span class="transform transition-transform" id="module-icon-{{ module.id }}">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                </svg>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="hidden p-4 border-t border-gray-200 dark:border-gray-700" id="module-content-{{ module.id }}">
+                                        {% if module.description %}
+                                            <p class="text-gray-700 dark:text-gray-300 mb-4">{{ module.description }}</p>
+                                        {% endif %}
+                                        
+                                        {% if module.lessons.all %}
+                                            <ul class="space-y-2">
+                                                {% for lesson in module.lessons.all %}
+                                                    <li class="flex items-center p-2 {% if not forloop.last %}border-b border-gray-100 dark:border-gray-800{% endif %}">
+                                                        <span class="mr-3 text-gray-400">
+                                                            {% if lesson.content_type == 'text' %}
+                                                                <i class="far fa-file-alt"></i>
+                                                            {% elif lesson.content_type == 'video' %}
+                                                                <i class="far fa-file-video"></i>
+                                                            {% elif lesson.content_type == 'assignment' %}
+                                                                <i class="far fa-file-code"></i>
+                                                            {% endif %}
+                                                        </span>
+                                                        <span class="flex-grow text-gray-800 dark:text-gray-200">
+                                                            {{ lesson.title }}
+                                                        </span>
+                                                        {% if lesson.duration %}
+                                                            <span class="text-sm text-gray-500 dark:text-gray-400">
+                                                                {{ lesson.duration }} min
+                                                            </span>
+                                                        {% endif %}
+                                                        
+                                                        {% if is_enrolled %}
+                                                            <a href="#" class="ml-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
+                                                                <span class="sr-only">Start Lesson</span>
+                                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                                                </svg>
+                                                            </a>
+                                                        {% else %}
+                                                            <span class="ml-2 text-gray-400">
+                                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                                                </svg>
+                                                            </span>
+                                                        {% endif %}
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                        {% else %}
+                                            <p class="text-gray-500 dark:text-gray-400 italic">No lessons in this module yet.</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-gray-500 dark:text-gray-400">No content has been added to this course yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Right column: Instructor and additional info -->
+            <div class="w-full md:w-1/3">
+                <div class="bg-gray-50 dark:bg-gray-900 p-5 rounded-lg mb-6">
+                    <h3 class="text-lg font-bold mb-4 text-gray-900 dark:text-white">Instructor</h3>
+                    <div class="flex items-center mb-4">
+                        {% if course.instructor.profile_picture %}
+                            <img class="w-12 h-12 rounded-full mr-3" src="{{ course.instructor.profile_picture.url }}" alt="{{ course.instructor.get_full_name }}">
+                        {% else %}
+                            <div class="w-12 h-12 rounded-full mr-3 bg-blue-600 flex items-center justify-center text-white font-bold">
+                                {{ course.instructor.get_initials }}
+                            </div>
+                        {% endif %}
+                        <div>
+                            <h4 class="text-gray-900 dark:text-white font-medium">{{ course.instructor.get_full_name }}</h4>
+                            {% if course.instructor.user_type == 'teacher' %}
+                                <p class="text-gray-600 dark:text-gray-400 text-sm">Teacher</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if course.instructor.bio %}
+                        <p class="text-gray-700 dark:text-gray-300 text-sm">{{ course.instructor.bio|truncatewords:30 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="bg-gray-50 dark:bg-gray-900 p-5 rounded-lg">
+                    <h3 class="text-lg font-bold mb-4 text-gray-900 dark:text-white">Course Details</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-center text-gray-700 dark:text-gray-300">
+                            <span class="w-5 mr-2 text-gray-500"><i class="fas fa-calendar"></i></span>
+                            <span>Created: {{ course.created_at|date:"F j, Y" }}</span>
+                        </li>
+                        {% if course.published_at %}
+                            <li class="flex items-center text-gray-700 dark:text-gray-300">
+                                <span class="w-5 mr-2 text-gray-500"><i class="fas fa-globe"></i></span>
+                                <span>Published: {{ course.published_at|date:"F j, Y" }}</span>
+                            </li>
+                        {% endif %}
+                        <li class="flex items-center text-gray-700 dark:text-gray-300">
+                            <span class="w-5 mr-2 text-gray-500"><i class="fas fa-layer-group"></i></span>
+                            <span>Category: {{ course.category.name }}</span>
+                        </li>
+                        <li class="flex items-center text-gray-700 dark:text-gray-300">
+                            <span class="w-5 mr-2 text-gray-500"><i class="fas fa-signal"></i></span>
+                            <span>Difficulty: {{ course.get_difficulty_display }}</span>
+                        </li>
+                        {% if course.duration %}
+                            <li class="flex items-center text-gray-700 dark:text-gray-300">
+                                <span class="w-5 mr-2 text-gray-500"><i class="fas fa-clock"></i></span>
+                                <span>Duration: {{ course.duration }} hours</span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+                
+                {% if not is_enrolled %}
+                <div class="mt-6">
+                    <button type="button" class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-3 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
+                        Enroll Now
+                    </button>
+                    <p class="text-sm text-center text-gray-500 dark:text-gray-400 mt-2">Free access to all course materials</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for toggling modules -->
+<script>
+    function toggleModule(moduleId) {
+        const content = document.getElementById(`module-content-${moduleId}`);
+        const icon = document.getElementById(`module-icon-${moduleId}`);
+        
+        if (content.classList.contains('hidden')) {
+            content.classList.remove('hidden');
+            icon.classList.add('rotate-180');
+        } else {
+            content.classList.add('hidden');
+            icon.classList.remove('rotate-180');
+        }
+    }
+    
+    // Open the first module by default
+    document.addEventListener('DOMContentLoaded', function() {
+        const firstModule = document.querySelector('[id^="module-header-"]');
+        if (firstModule) {
+            firstModule.click();
+        }
+    });
+</script>
+{% endblock %}

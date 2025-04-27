@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Enrollment Statistics" %} - LMS Platform{% endblock %}
+
+{% block extra_css %}
+<style>
+  .chart-container {
+    height: 300px;
+    width: 100%;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pb-6">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">{% trans "Enrollment Statistics" %}</h1>
+    <p class="text-gray-600 dark:text-gray-400">{% trans "Overview of enrollment statistics across all courses" %}</p>
+</div>
+
+<div class="grid grid-cols-1 gap-6">
+    <!-- Overall Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-4 text-center">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">{% trans "Total Enrollments" %}</h3>
+            <p class="text-3xl font-bold text-blue-600 dark:text-blue-500">{{ total_enrollments }}</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-4 text-center">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">{% trans "Active Enrollments" %}</h3>
+            <p class="text-3xl font-bold text-green-600 dark:text-green-500">{{ active_enrollments }}</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-4 text-center">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">{% trans "Completed Enrollments" %}</h3>
+            <p class="text-3xl font-bold text-purple-600 dark:text-purple-500">{{ completed_enrollments }}</p>
+        </div>
+    </div>
+    
+    <!-- Enrollment Trend Chart -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-4">
+        <h2 class="text-gray-900 dark:text-white text-lg font-medium mb-4">{% trans "Monthly Enrollment Trend" %}</h2>
+        <div class="chart-container">
+            <canvas id="enrollmentChart"></canvas>
+        </div>
+    </div>
+    
+    <!-- Course Enrollment Table -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-4">
+        <h2 class="text-gray-900 dark:text-white text-lg font-medium mb-4">{% trans "Course Enrollment Statistics" %}</h2>
+        
+        {% if course_stats %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                        <tr>
+                            <th scope="col" class="px-6 py-3">{% trans "Course" %}</th>
+                            <th scope="col" class="px-6 py-3">{% trans "Total Enrollments" %}</th>
+                            <th scope="col" class="px-6 py-3">{% trans "Active Enrollments" %}</th>
+                            <th scope="col" class="px-6 py-3">{% trans "Completion Rate" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for course in course_stats %}
+                        <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                            <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                {{ course.title }}
+                            </th>
+                            <td class="px-6 py-4">{{ course.total_enrolled }}</td>
+                            <td class="px-6 py-4">{{ course.active_enrolled }}</td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mr-2">
+                                        <div class="bg-blue-600 h-2.5 rounded-full" style="width: {{ course.completion_rate|floatformat:0 }}%"></div>
+                                    </div>
+                                    <span>{{ course.completion_rate|floatformat:1 }}%</span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-gray-600 dark:text-gray-400">{% trans "No enrollment data available." %}</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Monthly enrollment data
+        const monthlyData = [
+            {% for item in monthly_data %}
+                {
+                    month: "{{ item.month|date:'F Y' }}",
+                    count: {{ item.count }}
+                }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+        
+        // Extract months and counts for chart
+        const months = monthlyData.map(item => item.month);
+        const counts = monthlyData.map(item => item.count);
+        
+        // Create chart
+        const ctx = document.getElementById('enrollmentChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: months,
+                datasets: [{
+                    label: '{% trans "New Enrollments" %}',
+                    data: counts,
+                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 2,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

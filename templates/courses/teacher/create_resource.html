@@ -1,0 +1,120 @@
+{% extends "courses/base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Add Resource - {{ lesson.title }}{% endblock %}
+
+{% block courses_content %}
+<div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+    <div class="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Add Resource</h1>
+                <p class="mt-1 text-gray-600 dark:text-gray-400">
+                    Course: <a href="{% url 'teacher_course_detail' lesson.module.course.slug %}" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">{{ lesson.module.course.title }}</a> &raquo;
+                    Module: <a href="{% url 'module_detail' course_slug=lesson.module.course.slug module_id=lesson.module.id %}" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">{{ lesson.module.title }}</a> &raquo;
+                    Lesson: <a href="{% url 'lesson_detail' course_slug=lesson.module.course.slug lesson_id=lesson.id %}" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">{{ lesson.title }}</a>
+                </p>
+            </div>
+            <a href="{% url 'lesson_detail' course_slug=lesson.module.course.slug lesson_id=lesson.id %}" class="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </a>
+        </div>
+    </div>
+    
+    <div class="p-4 sm:p-6">
+        {% if messages %}
+            <div class="mb-6">
+                {% for message in messages %}
+                    <div class="p-4 {% if message.tags == 'success' %}bg-green-100 text-green-700 border border-green-200 dark:bg-green-800 dark:text-green-200 dark:border-green-700{% elif message.tags == 'error' %}bg-red-100 text-red-700 border border-red-200 dark:bg-red-800 dark:text-red-200 dark:border-red-700{% else %}bg-blue-100 text-blue-700 border border-blue-200 dark:bg-blue-800 dark:text-blue-200 dark:border-blue-700{% endif %} rounded-lg">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        <div class="max-w-2xl mx-auto">
+            <form method="post" enctype="multipart/form-data" class="space-y-6">
+                {% csrf_token %}
+                
+                <div class="space-y-4">
+                    {{ form.title|as_crispy_field }}
+                    {{ form.description|as_crispy_field }}
+                </div>
+                
+                <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                    <h2 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Resource Type</h2>
+                    <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">Choose between uploading a file or linking to an external resource:</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="relative">
+                            <div class="flex items-center pb-4 mb-4 border-b border-gray-200 dark:border-gray-700">
+                                <input type="radio" id="resource-type-file" name="resource_type" value="file" checked class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                                <label for="resource-type-file" class="ml-2 text-sm font-medium text-gray-900 dark:text-white">Upload File</label>
+                            </div>
+                            {{ form.file|as_crispy_field }}
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                Supported file types: PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX, ZIP, etc.
+                            </p>
+                        </div>
+                        
+                        <div class="relative">
+                            <div class="flex items-center pb-4 mb-4 border-b border-gray-200 dark:border-gray-700">
+                                <input type="radio" id="resource-type-url" name="resource_type" value="url" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                                <label for="resource-type-url" class="ml-2 text-sm font-medium text-gray-900 dark:text-white">External Link</label>
+                            </div>
+                            {{ form.url|as_crispy_field }}
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                Link to external websites, documentation, videos, etc.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pt-5 border-t border-gray-200 dark:border-gray-700">
+                    <div class="flex justify-end">
+                        <a href="{% url 'lesson_detail' course_slug=lesson.module.course.slug lesson_id=lesson.id %}" class="bg-white py-2.5 px-5 mr-2 mb-2 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                            Cancel
+                        </a>
+                        <button type="submit" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
+                            Add Resource
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileRadio = document.getElementById('resource-type-file');
+        const urlRadio = document.getElementById('resource-type-url');
+        const fileField = document.getElementById('id_file').closest('.form-group');
+        const urlField = document.getElementById('id_url').closest('.form-group');
+        
+        function toggleResourceType() {
+            if (fileRadio.checked) {
+                fileField.classList.remove('opacity-50', 'pointer-events-none');
+                urlField.classList.add('opacity-50', 'pointer-events-none');
+                document.getElementById('id_url').value = '';
+            } else {
+                fileField.classList.add('opacity-50', 'pointer-events-none');
+                urlField.classList.remove('opacity-50', 'pointer-events-none');
+                document.getElementById('id_file').value = '';
+            }
+        }
+        
+        // Initial state
+        toggleResourceType();
+        
+        // Event listeners
+        fileRadio.addEventListener('change', toggleResourceType);
+        urlRadio.addEventListener('change', toggleResourceType);
+    });
+</script>
+{% endblock %}
+{% endblock %}

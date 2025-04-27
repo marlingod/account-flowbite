@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Enroll in" %} {{ course.title }}{% endblock %}
+
+{% block content %}
+<div class="pb-6">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">{% trans "Enroll in" %} {{ course.title }}</h1>
+    <p class="text-gray-600 dark:text-gray-400">{% trans "Complete the enrollment process to begin learning" %}</p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- Enrollment Form -->
+    <div class="md:col-span-2">
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">{% trans "Enrollment Details" %}</h2>
+            
+            <form method="post" action="{% url 'enroll_course' course_slug=course.slug %}">
+                {% csrf_token %}
+                
+                <div class="space-y-4">
+                    <p class="text-gray-700 dark:text-gray-300">
+                        {% trans "You are about to enroll in" %} <strong>{{ course.title }}</strong>. 
+                        {% trans "By enrolling, you'll gain access to all course materials, quizzes, and resources." %}
+                    </p>
+                    
+                    <div class="p-4 bg-yellow-50 dark:bg-yellow-900 dark:bg-opacity-20 rounded-lg">
+                        <p class="text-yellow-800 dark:text-yellow-300 text-sm">
+                            <strong>{% trans "Note" %}:</strong> 
+                            {% trans "Your progress will be tracked, and you'll be able to continue where you left off each time you return to the course." %}
+                        </p>
+                    </div>
+                    
+                    <div class="flex items-start">
+                        <div class="flex items-center h-5">
+                            {{ form.agree_terms }}
+                        </div>
+                        <label for="{{ form.agree_terms.id_for_label }}" class="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                            {{ form.agree_terms.label }}
+                        </label>
+                    </div>
+                    {% if form.agree_terms.errors %}
+                        <p class="text-red-500 text-sm">{{ form.agree_terms.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="mt-6">
+                    <button type="submit" class="w-full px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        {% trans "Complete Enrollment" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Course Info -->
+    <div class="md:col-span-1">
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">{% trans "Course Information" %}</h2>
+            
+            {% if course.thumbnail %}
+                <img src="{{ course.thumbnail.url }}" alt="{{ course.title }}" class="w-full h-40 object-cover rounded-lg mb-4">
+            {% endif %}
+            
+            <dl class="space-y-3">
+                <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">{% trans "Instructor" %}</dt>
+                    <dd class="text-sm text-gray-900 dark:text-white">{{ course.instructor.get_full_name }}</dd>
+                </div>
+                
+                <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">{% trans "Category" %}</dt>
+                    <dd class="text-sm text-gray-900 dark:text-white">{{ course.category.name }}</dd>
+                </div>
+                
+                <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">{% trans "Difficulty" %}</dt>
+                    <dd class="text-sm text-gray-900 dark:text-white">{{ course.get_difficulty_display }}</dd>
+                </div>
+                
+                <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">{% trans "Duration" %}</dt>
+                    <dd class="text-sm text-gray-900 dark:text-white">
+                        {% if course.duration %}
+                            {{ course.duration }} {% trans "hours" %}
+                        {% else %}
+                            {% trans "Self-paced" %}
+                        {% endif %}
+                    </dd>
+                </div>
+                
+                <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">{% trans "Total Modules" %}</dt>
+                    <dd class="text-sm text-gray-900 dark:text-white">{{ course.total_modules }}</dd>
+                </div>
+                
+                <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">{% trans "Total Lessons" %}</dt>
+                    <dd class="text-sm text-gray-900 dark:text-white">{{ course.total_lessons }}</dd>
+                </div>
+            </dl>
+        </div>
+    </div>
+</div>
+
+<div class="mt-6">
+    <a href="{% url 'course_detail' slug=course.slug %}" class="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
+        &larr; {% trans "Back to Course Details" %}
+    </a>
+</div>
+{% endblock %}

@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Update Enrollment Status" %} - {{ course.title }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Breadcrumbs -->
+    <nav class="flex mb-5" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 md:space-x-3">
+            <li class="inline-flex items-center">
+                <a href="{% url 'dashboard' %}" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-white">
+                    <svg class="w-3 h-3 mr-2.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="m19.707 9.293-2-2-7-7a1 1 0 0 0-1.414 0l-7 7-2 2a1 1 0 0 0 1.414 1.414L2 10.414V18a2 2 0 0 0 2 2h3a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h3a2 2 0 0 0 2-2v-7.586l.293.293a1 1 0 0 0 1.414-1.414Z"/>
+                    </svg>
+                    {% trans "Dashboard" %}
+                </a>
+            </li>
+            <li>
+                <div class="flex items-center">
+                    <svg class="w-3 h-3 text-gray-400 mx-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
+                    </svg>
+                    <a href="{% url 'course_detail' slug=course.slug %}" class="ml-1 text-sm font-medium text-gray-700 hover:text-blue-600 md:ml-2 dark:text-gray-400 dark:hover:text-white">{{ course.title }}</a>
+                </div>
+            </li>
+            <li>
+                <div class="flex items-center">
+                    <svg class="w-3 h-3 text-gray-400 mx-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
+                    </svg>
+                    <a href="{% url 'course_students' course_slug=course.slug %}" class="ml-1 text-sm font-medium text-gray-700 hover:text-blue-600 md:ml-2 dark:text-gray-400 dark:hover:text-white">{% trans "Students" %}</a>
+                </div>
+            </li>
+            <li aria-current="page">
+                <div class="flex items-center">
+                    <svg class="w-3 h-3 text-gray-400 mx-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
+                    </svg>
+                    <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2 dark:text-gray-400">{% trans "Update Status" %}</span>
+                </div>
+            </li>
+        </ol>
+    </nav>
+
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-6">{% trans "Update Enrollment Status" %}</h1>
+    
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+        <div class="mb-6">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">{% trans "Student Information" %}</h2>
+            <div class="flex flex-col md:flex-row md:items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div class="flex items-center mb-4 md:mb-0 md:mr-6">
+                    {% if enrollment.student.profile_picture %}
+                    <img class="w-10 h-10 rounded-full mr-3" src="{{ enrollment.student.profile_picture.url }}" alt="{{ enrollment.student.get_full_name }}">
+                    {% else %}
+                    <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold mr-3">
+                        {{ enrollment.student.get_initials }}
+                    </div>
+                    {% endif %}
+                    <div>
+                        <p class="font-medium text-gray-900 dark:text-white">
+                            {{ enrollment.student.get_full_name|default:enrollment.student.username }}
+                        </p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            {{ enrollment.student.email }}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex flex-wrap gap-4">
+                    <div>
+                        <span class="text-xs text-gray-500 dark:text-gray-400">{% trans "Current Status" %}</span>
+                        <span class="ml-2 px-2 py-1 text-xs font-semibold rounded-full 
+                            {% if enrollment.status == 'active' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300
+                            {% elif enrollment.status == 'completed' %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300
+                            {% elif enrollment.status == 'dropped' %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300
+                            {% else %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300{% endif %}">
+                            {{ enrollment.get_status_display }}
+                        </span>
+                    </div>
+                    
+                    <div>
+                        <span class="text-xs text-gray-500 dark:text-gray-400">{% trans "Enrolled On" %}</span>
+                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                            {{ enrollment.enrolled_at|date:"M d, Y" }}
+                        </span>
+                    </div>
+                    
+                    <div>
+                        <span class="text-xs text-gray-500 dark:text-gray-400">{% trans "Progress" %}</span>
+                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                            {{ enrollment.progress|floatformat:0 }}%
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <form method="post" class="mt-6">
+            {% csrf_token %}
+            <div class="mb-6">
+                <label for="{{ form.status.id_for_label }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">{% trans "Enrollment Status" %}</label>
+                {{ form.status }}
+                {% if form.status.errors %}
+                <p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ form.status.errors.0 }}</p>
+                {% endif %}
+                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                    {% trans "Changing to 'Completed' will set progress to 100% and record completion date." %}
+                </p>
+            </div>
+            
+            <div class="flex items-center space-x-4 mt-8">
+                <button type="submit" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                    {% trans "Update Status" %}
+                </button>
+                <a href="{% url 'course_students' course_slug=course.slug %}" class="text-gray-500 bg-white hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 rounded-lg border border-gray-200 text-sm font-medium px-5 py-2.5 hover:text-gray-900 focus:z-10 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-500 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-600">
+                    {% trans "Cancel" %}
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

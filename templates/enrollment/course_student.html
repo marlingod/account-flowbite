@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Students" %} - {{ course.title }}{% endblock %}
+
+{% block content %}
+<div class="pb-6 flex flex-col md:flex-row md:items-center md:justify-between">
+    <div>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">{% trans "Course Students" %}</h1>
+        <p class="text-gray-600 dark:text-gray-400">{{ course.title }}</p>
+    </div>
+    
+    <div class="mt-4 md:mt-0">
+        <a href="{% url 'teacher_course_detail' slug=course.slug %}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600">
+            <svg class="-ml-1 mr-2 h-5 w-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"></path>
+            </svg>
+            {% trans "Back to Course" %}
+        </a>
+    </div>
+</div>
+
+<!-- Filter Form -->
+<div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6">
+    <form method="get" class="space-y-4 md:space-y-0 md:flex md:items-end md:space-x-4">
+        <div class="flex-1">
+            <label for="id_search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {% trans "Search" %}
+            </label>
+            <input type="text" id="id_search" name="q" value="{{ request.GET.q|default:'' }}" placeholder="{% trans 'Search by name or email' %}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+        </div>
+        
+        <div>
+            <label for="id_status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {% trans "Status" %}
+            </label>
+            <select id="id_status" name="status" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                <option value="" {% if not request.GET.status %}selected{% endif %}>{% trans "All Statuses" %}</option>
+                <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>{% trans "Active" %}</option>
+                <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>{% trans "Completed" %}</option>
+                <option value="dropped" {% if request.GET.status == 'dropped' %}selected{% endif %}>{% trans "Dropped" %}</option>
+                <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>{% trans "Pending" %}</option>
+            </select>
+        </div>
+        
+        <div>
+            <label for="id_progress_min" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {% trans "Min Progress" %}
+            </label>
+            <input type="number" id="id_progress_min" name="progress_min" value="{{ request.GET.progress_min|default:'' }}" min="0" max="100" placeholder="0%" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+        </div>
+        
+        <div>
+            <label for="id_progress_max" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {% trans "Max Progress" %}
+            </label>
+            <input type="number" id="id_progress_max" name="progress_max" value="{{ request.GET.progress_max|default:'' }}" min="0" max="100" placeholder="100%" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+        </div>
+        
+        <div>
+            <button type="submit" class="w-full md:w-auto px-4 py-2.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                {% trans "Filter" %}
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Students List -->
+<div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+    <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+        <h2 class="text-lg font-medium text-gray-900 dark:text-white">
+            {% trans "Students" %} ({{ enrollments|length }})
+        </h2>
+    </div>
+    
+    {% if enrollments %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            {% trans "Student" %}
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            {% trans "Status" %}
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            {% trans "Progress" %}
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            {% trans "Enrolled" %}
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            {% trans "Last Active" %}
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            {% trans "Actions" %}
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {% for enrollment in enrollments %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10">
+                                        {% if enrollment.student.profile_picture %}
+                                            <img class="h-10 w-10 rounded-full object-cover" src="{{ enrollment.student.profile_picture.url }}" alt="{{ enrollment.student.get_full_name }}">
+                                        {% else %}
+                                            <div class="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-medium">
+                                                {{ enrollment.student.get_initials }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                            {{ enrollment.student.get_full_name }}
+                                        </div>
+                                        <div class="text-sm text-gray-500 dark:text-gray-400">
+                                            {{ enrollment.student.email }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                    {% if enrollment.status == 'active' %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300
+                                    {% elif enrollment.status == 'completed' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300
+                                    {% elif enrollment.status == 'dropped' %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300
+                                    {% else %}bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300{% endif %}">
+                                    {{ enrollment.get_status_display }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700" style="width: 100px;">
+                                    <div class="bg-blue-600 h-2.5 rounded-full" style="width: {{ enrollment.progress|floatformat:0 }}%"></div>
+                                </div>
+                                <span class="text-xs text-gray-500 dark:text-gray-400">
+                                    {{ enrollment.progress|floatformat:0 }}%
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                {{ enrollment.enrolled_at|date:"M d, Y" }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                {% with last_progress=enrollment.lesson_progress.all|dictsortreversed:"last_accessed"|first %}
+                                    {% if last_progress.last_accessed %}
+                                        {{ last_progress.last_accessed|date:"M d, Y" }}
+                                    {% else %}
+                                        {% trans "Never" %}
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <a href="{% url 'student_progress' course_slug=course.slug student_id=enrollment.student.id %}" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
+                                    {% trans "View Progress" %}
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="p-6 text-center">
+            <p class="text-gray-500 dark:text-gray-400">{% trans "No students enrolled in this course yet." %}</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

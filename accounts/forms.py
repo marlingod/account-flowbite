@@ -102,7 +102,8 @@ class UserProfileForm(forms.ModelForm):
             ),
         }
 
-class ProfilePictureForm(forms.ModelForm):
+class ProfilePictureForm(forms.ModelForm):   
+    
     """Form for updating profile picture"""
     class Meta:
         model = User
@@ -114,4 +115,80 @@ class ProfilePictureForm(forms.ModelForm):
                     'accept': 'image/*'
                 }
             )
+        }
+  
+  
+        
+class CreateUserForm(forms.ModelForm):
+    """Form for admin to create new users"""
+    password = forms.CharField(
+        label=_("Temporary Password"),
+        required=False,
+        help_text=_("Leave empty to generate a random password"),
+        widget=forms.PasswordInput(
+            attrs={
+                'class': 'bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500'
+            }
+        )
+    )
+    
+    send_welcome_email = forms.BooleanField(
+        initial=True,
+        required=False,
+        label=_("Send welcome email"),
+        widget=forms.CheckboxInput(
+            attrs={
+                'class': 'w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600'
+            }
+        )
+    )
+    
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'first_name', 'last_name', 'user_type']
+        widgets = {
+            'username': forms.TextInput(
+                attrs={
+                    'class': 'bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500'
+                }
+            ),
+            'email': forms.EmailInput(
+                attrs={
+                    'class': 'bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500'
+                }
+            ),
+            'first_name': forms.TextInput(
+                attrs={
+                    'class': 'bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500'
+                }
+            ),
+            'last_name': forms.TextInput(
+                attrs={
+                    'class': 'bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500'
+                }
+            ),
+            'user_type': forms.Select(
+                attrs={
+                    'class': 'bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500'
+                }
+            ),
+        }
+    
+    def clean_password(self):
+        password = self.cleaned_data.get('password')
+        if password:
+            validate_password(password)
+        return password
+
+class ChangeUserTypeForm(forms.ModelForm):
+    """Form for changing a user's type"""
+    class Meta:
+        model = User
+        fields = ['user_type']
+        widgets = {
+            'user_type': forms.Select(
+                attrs={
+                    'class': 'bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500'
+                }
+            ),
         }

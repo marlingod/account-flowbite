@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils.translation import gettext_lazy as _
 from .models import User
-from .forms import UserProfileForm, ProfilePictureForm
+from .forms import UserProfileForm, ProfilePictureForm, CreateUserForm
 from .decorators import admin_required
 
 @login_required
@@ -113,3 +113,97 @@ def toggle_user_active(request, user_id):
     messages.success(request, _(f"User account has been {action}."))
     
     return redirect('user_detail', user_id=user.id)
+
+
+
+# Additional Admin Views # accounts/views.py (additional admin views)
+@login_required
+def create_user(request):
+    """Create a new user (admin only)"""
+    if not request.user.is_admin_user():
+        messages.error(request, _("You don't have permission to access this page."))
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        form = CreateUserForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
+            # Set a random password that the user will reset
+            password = User.objects.make_random_password()
+            user.set_password(password)
+            user.save()
+            
+            # Send welcome email with password reset link
+            try:
+                send_welcome_email(user, request)
+                messages.success(request, _("User created successfully. A welcome email has been sent."))
+            except Exception as e:
+                messages.warning(request, _("User created, but there was an error sending the welcome email."))
+            
+            return redirect('user_list')
+    else:
+        form = CreateUserForm()
+    
+    return render(request, 'accounts/create_user.html', {'form': form})
+
+@login_required
+def change_user_type(request, user_id):
+    """Change a user's type (admin only)"""
+    if not request.user.is_admin_user():
+        messages.error(request, _("You don't have permission to access this page."))
+        return redirect('dashboard')
+    
+    user = get_object_or_404(User, id=user_id)
+    
+    if request.method == 'POST':
+        form = ChangeUserTypeForm(request.POST, instance=user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, _("User type updated successfully."))
+            return redirect('user_detail', user_id=user.id)
+    else:
+        form = ChangeUserTypeForm(instance=user)
+    
+    return render(request, 'accounts/change_user_type.html', {
+        'form': form,
+        'profile_user': user
+    })
+
+@login_required
+def deactivate_user(request, user_id):
+    """Deactivate a user account (admin only)"""
+    if not request.user.is_admin_user():
+        messages.error(request, _("You don't have permission to access this page."))
+        return redirect('dashboard')
+    
+    user = get_object_or_404(User, id=user_id)
+    
+    # Prevent self-deactivation
+    if user.id == request.user.id:
+        messages.error(request, _("You cannot deactivate your own account."))
+        return redirect('user_detail', user_id=user.id)
+    
+    if request.method == 'POST':
+        user.is_active = False
+        user.save()
+        messages.success(request, _("User account has been deactivated."))
+        return redirect('user_list')
+    
+    return render(request, 'accounts/deactivate_user.html', {'profile_user': user})
+
+@login_required
+def activate_user(request, user_id):
+    """Reactivate a user account (admin only)"""
+    if not request.user.is_admin_user():
+        messages.error(request, _("You don't have permission to access this page."))
+        return redirect('dashboard')
+    
+    user = get_object_or_404(User, id=user_id)
+    
+    if request.method == 'POST':
+        user.is_active = True
+        user.save()
+        messages.success(request, _("User account has been activated."))
+        return redirect('user_list')
+    
+    return render(request, 'accounts/activate_user.html', {'profile_user': user})

@@ -1,0 +1,280 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Student Progress" %} - {{ student.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="pb-6 flex flex-col md:flex-row md:items-center md:justify-between">
+    <div>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">{% trans "Student Progress" %}</h1>
+        <p class="text-gray-600 dark:text-gray-400">{{ student.get_full_name }} - {{ course.title }}</p>
+    </div>
+    
+    <div class="mt-4 md:mt-0">
+        <a href="{% url 'course_students' course_slug=course.slug %}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600">
+            <svg class="-ml-1 mr-2 h-5 w-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"></path>
+            </svg>
+            {% trans "Back to Students" %}
+        </a>
+    </div>
+</div>
+
+<!-- Progress Overview -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">{% trans "Enrollment" %}</h3>
+        <dl class="space-y-2">
+            <div>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">{% trans "Status" %}</dt>
+                <dd class="mt-1">
+                    <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium 
+                        {% if enrollment.status == 'active' %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300
+                        {% elif enrollment.status == 'completed' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300
+                        {% elif enrollment.status == 'dropped' %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300
+                        {% else %}bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300{% endif %}">
+                        {{ enrollment.get_status_display }}
+                    </span>
+                </dd>
+            </div>
+            <div>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">{% trans "Enrolled On" %}</dt>
+                <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ enrollment.enrolled_at|date:"F j, Y" }}</dd>
+            </div>
+            {% if enrollment.completion_date %}
+                <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">{% trans "Completed On" %}</dt>
+                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ enrollment.completion_date|date:"F j, Y" }}</dd>
+                </div>
+            {% endif %}
+        </dl>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">{% trans "Overall Progress" %}</h3>
+        <div class="flex items-center">
+            <div class="w-16 h-16 rounded-full border-4 border-blue-500 flex items-center justify-center">
+                <span class="text-xl font-bold text-gray-900 dark:text-white">{{ enrollment.progress|floatformat:0 }}%</span>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm text-gray-700 dark:text-gray-300">
+                    {% if enrollment.progress < 25 %}
+                        {% trans "Just getting started" %}
+                    {% elif enrollment.progress < 50 %}
+                        {% trans "Making good progress" %}
+                    {% elif enrollment.progress < 75 %}
+                        {% trans "Advancing well" %}
+                    {% elif enrollment.progress < 100 %}
+                        {% trans "Almost done" %}
+                    {% else %}
+                        {% trans "Course completed" %}
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">{% trans "Lessons" %}</h3>
+        <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-medium text-gray-500 dark:text-gray-400">{% trans "Completed" %}</span>
+            <span class="text-sm font-medium text-gray-900 dark:text-white">
+                {{ lesson_progress|filter_by:"status,completed"|length }} / {{ lesson_progress|length }}
+            </span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+            <div class="bg-green-600 h-2.5 rounded-full" style="width: {{ lesson_progress|filter_by:"status,completed"|length|percentage:lesson_progress|length }}%"></div>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">{% trans "Last Activity" %}</h3>
+        {% with last_activity=lesson_progress|dictsortreversed:"last_accessed"|first %}
+            {% if last_activity.last_accessed %}
+                <p class="text-sm text-gray-900 dark:text-white">
+                    <strong>{% trans "Lesson" %}:</strong> {{ last_activity.lesson.title }}
+                </p>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    {{ last_activity.last_accessed|date:"F j, Y, g:i a" }}
+                </p>
+            {% else %}
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                    {% trans "No activity recorded yet" %}
+                </p>
+            {% endif %}
+        {% endwith %}
+    </div>
+</div>
+
+<!-- Module Progress -->
+<div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+    <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+        <h2 class="text-xl font-medium text-gray-900 dark:text-white">{% trans "Module Progress" %}</h2>
+    </div>
+    
+    <div class="p-6">
+        <div class="space-y-8">
+            {% for module in course.modules.all %}
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-3">
+                        {{ module.title }}
+                    </h3>
+                    
+                    {% with module_lessons=module.lessons.all %}
+                        <div class="mb-2 flex justify-between text-sm">
+                            <span class="text-gray-500 dark:text-gray-400">
+                                {% trans "Completed" %}: 
+                                {% with completed=lesson_progress|filter_by:"lesson__module,module"|filter_by:"status,completed"|length %}
+                                    {{ completed }} / {{ module_lessons|length }}
+                                    ({{ completed|percentage:module_lessons|length|floatformat:0 }}%)
+                                {% endwith %}
+                            </span>
+                            <span class="text-gray-500 dark:text-gray-400">
+                                {% with last=lesson_progress|filter_by:"lesson__module,module"|dictsortreversed:"last_accessed"|first %}
+                                    {% if last.last_accessed %}
+                                        {% trans "Last accessed" %}: {{ last.last_accessed|date:"M d, Y" }}
+                                    {% endif %}
+                                {% endwith %}
+                            </span>
+                        </div>
+                    
+                        <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mb-4">
+                            {% with completed=lesson_progress|filter_by:"lesson__module,module"|filter_by:"status,completed"|length %}
+                                <div class="bg-blue-600 h-2.5 rounded-full" style="width: {{ completed|percentage:module_lessons|length }}%"></div>
+                            {% endwith %}
+                        </div>
+                        
+                        <div class="space-y-2">
+                            {% for lesson in module_lessons %}
+                                {% with lesson_stat=lesson_progress|filter_by:"lesson,lesson"|first %}
+                                    <div class="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-b-0">
+                                        <div class="flex items-center">
+                                            {% if lesson_stat.status == 'completed' %}
+                                                <svg class="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                                </svg>
+                                            {% elif lesson_stat.status == 'in_progress' %}
+                                                <svg class="h-5 w-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                                                </svg>
+                                            {% else %}
+                                                <svg class="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clip-rule="evenodd"></path>
+                                                </svg>
+                                            {% endif %}
+                                            
+                                            <span class="ml-2 text-sm font-medium text-gray-900 dark:text-white">
+                                                {{ lesson.title }}
+                                            </span>
+                                        </div>
+                                        
+                                        <div class="text-sm text-gray-500 dark:text-gray-400">
+                                            {% if lesson_stat.status == 'completed' %}
+                                                {% trans "Completed" %} {{ lesson_stat.completed_at|date:"M d, Y" }}
+                                            {% elif lesson_stat.status == 'in_progress' %}
+                                                {% trans "Last accessed" %} {{ lesson_stat.last_accessed|date:"M d, Y" }}
+                                            {% else %}
+                                                {% trans "Not started" %}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endwith %}
+                            {% endfor %}
+                        </div>
+                    {% endwith %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Quiz Progress -->
+{% with student_quiz_attempts=student.quiz_attempts.filter|filter_by:"quiz__course,course" %}
+    {% if student_quiz_attempts %}
+        <div class="mt-6 bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="text-xl font-medium text-gray-900 dark:text-white">{% trans "Quiz Performance" %}</h2>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead class="bg-gray-50 dark:bg-gray-700">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                {% trans "Quiz" %}
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                {% trans "Type" %}
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                {% trans "Score" %}
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                {% trans "Status" %}
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                {% trans "Attempts" %}
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                {% trans "Last Attempt" %}
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                {% trans "Actions" %}
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        {% for attempt in student_quiz_attempts|dictsortreversed:"started_at" %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                        {{ attempt.quiz.title }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-500 dark:text-gray-400">
+                                        {{ attempt.quiz.get_quiz_type_display }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% if attempt.percentage %}
+                                        <div class="text-sm font-medium {% if attempt.passed %}text-green-600 dark:text-green-400{% else %}text-red-600 dark:text-red-400{% endif %}">
+                                            {{ attempt.percentage|floatformat:1 }}%
+                                        </div>
+                                    {% else %}
+                                        <div class="text-sm text-gray-500 dark:text-gray-400">
+                                            -
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                        {% if attempt.status == 'in_progress' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300
+                                        {% elif attempt.status == 'completed' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300
+                                        {% else %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300{% endif %}">
+                                        {{ attempt.get_status_display }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-500 dark:text-gray-400">
+                                        {{ student_quiz_attempts|filter_by:"quiz,attempt.quiz"|length }} / 
+                                        {% if attempt.quiz.max_attempts > 0 %}{{ attempt.quiz.max_attempts }}{% else %}∞{% endif %}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                    {{ attempt.started_at|date:"M d, Y" }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <a href="{% url 'view_attempt' course_slug=course.slug attempt_id=attempt.id %}" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
+                                        {% trans "View Details" %}
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+{% endwith %}
+{% endblock %}
